@@ -5,25 +5,36 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getUntrackedObject = exports.trackMemo = exports.isDeepChanged = exports.MODE_IGNORE_REF_EQUALITY_IN_DEEP = exports.MODE_ASSUME_UNCHANGED_IF_UNAFFECTED_IN_DEEP = exports.MODE_IGNORE_REF_EQUALITY = exports.MODE_ASSUME_UNCHANGED_IF_UNAFFECTED = exports.createDeepProxy = void 0;
 
-function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _typeof(obj) { "@babel/helpers - typeof"; if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 // -------------------------------------------------------
 // deep proxy
 // -------------------------------------------------------
+global.Reflect = function (undefined) {
+  Object.defineProperty(self, "Reflect", {
+    value: self.Reflect || {},
+    writable: !0,
+    configurable: !0
+  }), Object.defineProperty(self, "Reflect", {
+    value: self.Reflect || {},
+    enumerable: !1
+  });
+}.call("object" === (typeof window === "undefined" ? "undefined" : _typeof(window)) && window || "object" === (typeof self === "undefined" ? "undefined" : _typeof(self)) && self || "object" === (typeof global === "undefined" ? "undefined" : _typeof(global)) && global || {});
+
 var OWN_KEYS_SYMBOL = Symbol();
 var TRACK_MEMO_SYMBOL = Symbol();
 var GET_ORIGINAL_SYMBOL = Symbol();
-var TRACK_OBJECT_PROPERTY = 't';
-var AFFECTED_PROPERTY = 'a';
-var RECORD_USAGE_PROPERTY = 'r';
-var RECORD_OBJECT_AS_USED_PROPERTY = 'u';
-var ORIGINAL_OBJECT_PROPERTY = 'o';
-var PROXY_PROPERTY = 'p';
-var PROXY_CACHE_PROPERTY = 'c';
-var NEXT_OBJECT_PROPERTY = 'n';
-var CHANGED_PROPERTY = 'g';
+var TRACK_OBJECT_PROPERTY = "t";
+var AFFECTED_PROPERTY = "a";
+var RECORD_USAGE_PROPERTY = "r";
+var RECORD_OBJECT_AS_USED_PROPERTY = "u";
+var ORIGINAL_OBJECT_PROPERTY = "o";
+var PROXY_PROPERTY = "p";
+var PROXY_CACHE_PROPERTY = "c";
+var NEXT_OBJECT_PROPERTY = "n";
+var CHANGED_PROPERTY = "g";
 var GLOBAL_OBJECT = Object;
 var GLOBAL_ARRAY = Array;
 var GLOBAL_REFLECT = Reflect; // check if obj is a plain object or an array
@@ -136,8 +147,8 @@ exports.MODE_IGNORE_REF_EQUALITY_IN_DEEP = MODE_IGNORE_REF_EQUALITY_IN_DEEP;
 
 var isDeepChanged = function isDeepChanged(origObj, nextObj, affected, cache, mode) {
   if (origObj === nextObj && (mode & MODE_IGNORE_REF_EQUALITY) === 0) return false;
-  if (_typeof(origObj) !== 'object' || origObj === null) return true;
-  if (_typeof(nextObj) !== 'object' || nextObj === null) return true;
+  if (_typeof(origObj) !== "object" || origObj === null) return true;
+  if (_typeof(nextObj) !== "object" || nextObj === null) return true;
   var used = affected.get(origObj);
   if (!used) return (mode & MODE_ASSUME_UNCHANGED_IF_UNAFFECTED) === 0;
 

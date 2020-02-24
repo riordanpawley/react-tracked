@@ -1,37 +1,54 @@
 // -------------------------------------------------------
 // deep proxy
 // -------------------------------------------------------
-
+global.Reflect = function(undefined) {
+  Object.defineProperty(self, "Reflect", {
+    value: self.Reflect || {},
+    writable: !0,
+    configurable: !0
+  }),
+    Object.defineProperty(self, "Reflect", {
+      value: self.Reflect || {},
+      enumerable: !1
+    });
+}.call(
+  ("object" === typeof window && window) ||
+    ("object" === typeof self && self) ||
+    ("object" === typeof global && global) ||
+    {}
+);
 const OWN_KEYS_SYMBOL = Symbol();
 const TRACK_MEMO_SYMBOL = Symbol();
 const GET_ORIGINAL_SYMBOL = Symbol();
 
-const TRACK_OBJECT_PROPERTY = 't';
-const AFFECTED_PROPERTY = 'a';
-const RECORD_USAGE_PROPERTY = 'r';
-const RECORD_OBJECT_AS_USED_PROPERTY = 'u';
-const ORIGINAL_OBJECT_PROPERTY = 'o';
-const PROXY_PROPERTY = 'p';
-const PROXY_CACHE_PROPERTY = 'c';
-const NEXT_OBJECT_PROPERTY = 'n';
-const CHANGED_PROPERTY = 'g';
+const TRACK_OBJECT_PROPERTY = "t";
+const AFFECTED_PROPERTY = "a";
+const RECORD_USAGE_PROPERTY = "r";
+const RECORD_OBJECT_AS_USED_PROPERTY = "u";
+const ORIGINAL_OBJECT_PROPERTY = "o";
+const PROXY_PROPERTY = "p";
+const PROXY_CACHE_PROPERTY = "c";
+const NEXT_OBJECT_PROPERTY = "n";
+const CHANGED_PROPERTY = "g";
 
 const GLOBAL_OBJECT = Object;
 const GLOBAL_ARRAY = Array;
 const GLOBAL_REFLECT = Reflect;
 
 // check if obj is a plain object or an array
-const isPlainObject = (obj) => {
+const isPlainObject = obj => {
   try {
     const proto = GLOBAL_OBJECT.getPrototypeOf(obj);
-    return proto === GLOBAL_OBJECT.prototype || proto === GLOBAL_ARRAY.prototype;
+    return (
+      proto === GLOBAL_OBJECT.prototype || proto === GLOBAL_ARRAY.prototype
+    );
   } catch (e) {
     return false;
   }
 };
 
 // copy obj if frozen
-const unfreeze = (obj) => {
+const unfreeze = obj => {
   if (!GLOBAL_OBJECT.isFrozen(obj)) return obj;
   if (GLOBAL_ARRAY.isArray(obj)) {
     return GLOBAL_ARRAY.from(obj);
@@ -59,7 +76,11 @@ const createProxyHandler = () => ({
     }
     this[RECORD_USAGE_PROPERTY](key);
     // eslint-disable-next-line no-use-before-define, @typescript-eslint/no-use-before-define
-    return createDeepProxy(target[key], this[AFFECTED_PROPERTY], this[PROXY_CACHE_PROPERTY]);
+    return createDeepProxy(
+      target[key],
+      this[AFFECTED_PROPERTY],
+      this[PROXY_CACHE_PROPERTY]
+    );
   },
   has(target, key) {
     if (key === TRACK_MEMO_SYMBOL) {
@@ -76,7 +97,7 @@ const createProxyHandler = () => ({
   ownKeys(target) {
     this[RECORD_USAGE_PROPERTY](OWN_KEYS_SYMBOL);
     return GLOBAL_REFLECT.ownKeys(target);
-  },
+  }
 });
 
 export const createDeepProxy = (obj, affected, proxyCache) => {
@@ -99,31 +120,26 @@ export const createDeepProxy = (obj, affected, proxyCache) => {
 const isOwnKeysChanged = (origObj, nextObj) => {
   const origKeys = GLOBAL_REFLECT.ownKeys(origObj);
   const nextKeys = GLOBAL_REFLECT.ownKeys(nextObj);
-  return origKeys.length !== nextKeys.length
-    || origKeys.some((k, i) => k !== nextKeys[i]);
+  return (
+    origKeys.length !== nextKeys.length ||
+    origKeys.some((k, i) => k !== nextKeys[i])
+  );
 };
 
 export const MODE_ASSUME_UNCHANGED_IF_UNAFFECTED = /*   */ 0b00001;
 export const MODE_IGNORE_REF_EQUALITY = /*              */ 0b00010;
 
 const IN_DEEP_SHIFT = 2;
-export const MODE_ASSUME_UNCHANGED_IF_UNAFFECTED_IN_DEEP = (
-  MODE_ASSUME_UNCHANGED_IF_UNAFFECTED << IN_DEEP_SHIFT
-);
-export const MODE_IGNORE_REF_EQUALITY_IN_DEEP = (
-  MODE_IGNORE_REF_EQUALITY << IN_DEEP_SHIFT
-);
+export const MODE_ASSUME_UNCHANGED_IF_UNAFFECTED_IN_DEEP =
+  MODE_ASSUME_UNCHANGED_IF_UNAFFECTED << IN_DEEP_SHIFT;
+export const MODE_IGNORE_REF_EQUALITY_IN_DEEP =
+  MODE_IGNORE_REF_EQUALITY << IN_DEEP_SHIFT;
 
-export const isDeepChanged = (
-  origObj,
-  nextObj,
-  affected,
-  cache,
-  mode,
-) => {
-  if (origObj === nextObj && (mode & MODE_IGNORE_REF_EQUALITY) === 0) return false;
-  if (typeof origObj !== 'object' || origObj === null) return true;
-  if (typeof nextObj !== 'object' || nextObj === null) return true;
+export const isDeepChanged = (origObj, nextObj, affected, cache, mode) => {
+  if (origObj === nextObj && (mode & MODE_IGNORE_REF_EQUALITY) === 0)
+    return false;
+  if (typeof origObj !== "object" || origObj === null) return true;
+  if (typeof nextObj !== "object" || nextObj === null) return true;
   const used = affected.get(origObj);
   if (!used) return (mode & MODE_ASSUME_UNCHANGED_IF_UNAFFECTED) === 0;
   if (cache && (mode & MODE_IGNORE_REF_EQUALITY) === 0) {
@@ -137,29 +153,33 @@ export const isDeepChanged = (
   let changed = null;
   // eslint-disable-next-line no-restricted-syntax
   for (const key of used) {
-    const c = key === OWN_KEYS_SYMBOL ? isOwnKeysChanged(origObj, nextObj)
-      : isDeepChanged(
-        origObj[key],
-        nextObj[key],
-        affected,
-        cache,
-        ((mode >>> IN_DEEP_SHIFT) << IN_DEEP_SHIFT) | (mode >>> IN_DEEP_SHIFT),
-      );
+    const c =
+      key === OWN_KEYS_SYMBOL
+        ? isOwnKeysChanged(origObj, nextObj)
+        : isDeepChanged(
+            origObj[key],
+            nextObj[key],
+            affected,
+            cache,
+            ((mode >>> IN_DEEP_SHIFT) << IN_DEEP_SHIFT) |
+              (mode >>> IN_DEEP_SHIFT)
+          );
     if (c === true || c === false) changed = c;
     if (changed) break;
   }
-  if (changed === null) changed = (mode & MODE_ASSUME_UNCHANGED_IF_UNAFFECTED) === 0;
+  if (changed === null)
+    changed = (mode & MODE_ASSUME_UNCHANGED_IF_UNAFFECTED) === 0;
   if (cache && (mode & MODE_IGNORE_REF_EQUALITY) === 0) {
     cache.set(origObj, {
       [NEXT_OBJECT_PROPERTY]: nextObj,
-      [CHANGED_PROPERTY]: changed,
+      [CHANGED_PROPERTY]: changed
     });
   }
   return changed;
 };
 
 // explicitly track object with memo
-export const trackMemo = (obj) => {
+export const trackMemo = obj => {
   if (isPlainObject(obj)) {
     return TRACK_MEMO_SYMBOL in obj;
   }
@@ -167,7 +187,7 @@ export const trackMemo = (obj) => {
 };
 
 // get original object from proxy
-export const getUntrackedObject = (obj) => {
+export const getUntrackedObject = obj => {
   if (isPlainObject(obj)) {
     return obj[GET_ORIGINAL_SYMBOL] || null;
   }
